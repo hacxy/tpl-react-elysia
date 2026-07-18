@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-export default tseslint.config(
+export default [
   js.configs.recommended,
   ...tseslint.configs.recommended,
   prettier,
@@ -29,5 +29,5 @@ export default tseslint.config(
         tsconfigRootDir: __dirname,
       },
     },
-  }
-)
+  },
+]
