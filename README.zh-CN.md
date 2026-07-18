@@ -6,25 +6,28 @@
 
 ## 技术栈
 
-| 层级 | 技术 |
-|------|------|
-| 运行时 | [Bun](https://bun.sh/) |
-| 后端 | [Elysia](https://elysiajs.com/) + [Drizzle ORM](https://orm.drizzle.team/) + SQLite |
-| 前端 | [React 19](https://react.dev/) + [Vite](https://vitejs.dev/) + [React Router](https://reactrouter.com/) |
-| 状态管理 | [Zustand](https://zustand-demo.pmnd.rs/) |
-| 共享包 | TypeScript 类型与工具函数 |
-| 代码规范 | [@antfu/eslint-config](https://github.com/antfu/eslint-config) + lint-staged + commitlint |
-| 测试 | Bun test（单元测试）+ [Playwright](https://playwright.dev/)（E2E） |
+| 层级     | 技术                                                                                                    |
+| -------- | ------------------------------------------------------------------------------------------------------- |
+| 运行时   | [Bun](https://bun.sh/)                                                                                  |
+| 后端     | [Elysia](https://elysiajs.com/) + [Prisma](https://www.prisma.io/) + SQLite                             |
+| 前端     | [React 19](https://react.dev/) + [Vite](https://vitejs.dev/) + [React Router](https://reactrouter.com/) |
+| 状态管理 | [Zustand](https://zustand-demo.pmnd.rs/)                                                                |
+| 代码规范 | [ESLint](https://eslint.org/) + [Prettier](https://prettier.io/) + lint-staged + commitlint             |
+| 测试     | [Vitest](https://vitest.dev/)（单元测试）+ [Playwright](https://playwright.dev/)（E2E）                 |
+| CI/CD    | [GitHub Actions](https://github.com/features/actions)                                                   |
 
 ## 项目结构
 
 ```
-fullstack-template/
+tpl-react-elysia/
 ├── apps/
-│   ├── server/          # Elysia API 服务（端口 3000）
+│   ├── server/          # Elysia API 服务（端口 1118）
 │   └── web/             # React 前端（端口 5173）
-└── packages/
-    └── shared/          # 共享类型（如 ApiResponse<T>）
+├── .github/workflows/   # GitHub Actions CI
+├── .husky/              # Git hooks
+├── eslint.config.js     # ESLint 配置（recommended + TypeScript）
+├── .prettierrc          # Prettier 配置
+└── package.json         # 根工作区配置
 ```
 
 ## 快速开始
@@ -39,19 +42,12 @@ fullstack-template/
 bun install
 ```
 
-### 配置环境变量
-
-```bash
-cp apps/server/.env.example apps/server/.env
-cp apps/web/.env.example    apps/web/.env
-```
-
-按需修改其中的值。Bun 会自动加载 `.env` 文件，无需额外配置。
-
 ### 初始化数据库
 
 ```bash
-bun db:migrate
+cd apps/server
+bun run prisma:generate
+bun run prisma:push
 ```
 
 ### 启动开发环境
@@ -60,7 +56,7 @@ bun db:migrate
 bun dev
 ```
 
-同时启动后端服务（http://localhost:3000）和前端开发服务器（http://localhost:5173）。
+同时启动后端服务（http://localhost:1118）和前端开发服务器（http://localhost:5173）。
 
 ---
 
@@ -72,56 +68,49 @@ bun dev
 
 ```
 apps/server/
-├── drizzle/             # SQL 迁移文件（需提交到版本控制）
-│   └── meta/            # 迁移日志与快照
+├── prisma/              # Prisma schema 和迁移文件
+│   ├── schema.prisma    # 数据库 schema
+│   └── migrations/      # SQL 迁移文件
 ├── src/
-│   ├── db/              # Drizzle 客户端实例与 schema 定义
-│   ├── models/          # Elysia 请求/响应类型模型
-│   ├── controllers/     # 请求处理器（薄层，委托给 service）
-│   ├── services/        # 业务逻辑
-│   ├── app.ts           # Elysia 应用实例、中间件与路由挂载
-│   └── index.ts         # 入口——执行迁移后启动服务，端口 3000
-└── sqlite.db            # 本地数据库文件（已 git-ignore）
+│   ├── modules/         # 功能模块（auth 等）
+│   │   └── auth/        # 认证模块（路由、服务、模型）
+│   ├── plugins/         # Elysia 插件（jwt、log、openapi）
+│   ├── utils/           # 工具函数
+│   ├── common/          # 公共实例（prisma）
+│   ├── app.ts           # Elysia 应用实例
+│   └── index.ts         # 入口文件
+└── .env                 # 环境变量
 ```
 
 ### 核心特性
 
 - **Elysia** — 快速、类型安全的 Web 框架，支持端到端类型推导
-- **Drizzle ORM** — 类型安全的 SQL，schema 优先的迁移管理
-- **SQLite** via `bun:sqlite` — Bun 原生内置 SQLite 驱动，零配置
-- **自动迁移** — `migrate()` 在每次服务器启动时执行，可重复运行且幂等
+- **Prisma** — 类型安全的 ORM，自动生成客户端
+- **SQLite** via `@libsql/client` — 轻量级数据库
+- **JWT 认证** — `@elysiajs/jwt` 实现基于 token 的认证
 - **Swagger / Scalar UI** — 在 `/scalar` 自动生成 API 文档
 - **热重载** — `bun --watch` 文件变更时自动重启
 
-### 数据库脚本
-
-在项目根目录执行：
-
-| 脚本 | 说明 |
-|------|------|
-| `bun db:generate` | 根据 schema 变更生成新的 SQL 迁移文件 |
-| `bun db:migrate` | 将待执行的迁移应用到本地数据库 |
-| `bun db:push` | 直接同步 schema（仅开发用，不记录迁移历史） |
-| `bun db:studio` | 打开 Drizzle Studio（数据库可视化工具） |
-
-> **Schema 变更工作流：** 修改 `apps/server/src/db/schema.ts` → 执行 `bun db:generate` → 将 `apps/server/drizzle/` 下的新文件提交到 Git → 执行 `bun db:migrate`。
-
 ### API 端点
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/` | 健康检查——返回 `{ "status": "ok" }` |
-| GET | `/api/users` | 获取所有用户 |
-| POST | `/api/users` | 创建新用户 |
+| 方法 | 路径            | 说明                     |
+| ---- | --------------- | ------------------------ |
+| POST | `/auth/sign-up` | 用户注册                 |
+| POST | `/auth/sign-in` | 用户登录（返回 JWT）     |
+| GET  | `/auth/users`   | 获取用户列表（需要认证） |
 
-完整交互文档：http://localhost:3000/scalar（仅开发环境）
+完整交互文档：http://localhost:1118/scalar（仅开发环境）
 
-### 单元测试
+### 数据库脚本
 
-```bash
-cd apps/server
-bun test
-```
+在 `apps/server` 目录执行：
+
+| 脚本                      | 说明                 |
+| ------------------------- | -------------------- |
+| `bun run prisma:generate` | 生成 Prisma 客户端   |
+| `bun run prisma:push`     | 推送 schema 到数据库 |
+| `bun run prisma:migrate`  | 创建并应用迁移       |
+| `bun run prisma:seed`     | 填充种子数据         |
 
 ---
 
@@ -136,12 +125,13 @@ apps/web/
 ├── e2e/                 # Playwright 端到端测试
 ├── public/              # 静态资源（原样提供）
 └── src/
-    ├── assets/          # 图片和 SVG（由组件导入）
-    ├── layouts/         # 公共布局组件（如 RootLayout）
-    ├── pages/           # 每个路由对应一个组件（Home、NotFound 等）
+    ├── components/      # 可复用组件（AuthGuard）
+    ├── layouts/         # 公共布局组件（RootLayout）
+    ├── pages/           # 每个路由对应一个组件（Home、Login、Register、Users）
     ├── router/          # React Router 配置
-    ├── services/        # openapi-fetch 客户端与自动生成的 API 类型
-    ├── store/           # Zustand 状态管理
+    ├── services/        # API 服务函数
+    ├── store/           # Zustand 状态管理（auth、counter）
+    ├── test/            # 测试配置
     ├── App.tsx          # 根组件
     └── main.tsx         # 入口文件
 ```
@@ -152,8 +142,18 @@ apps/web/
 - **React Router** — 客户端路由，支持嵌套布局
 - **Zustand** — 轻量级全局状态管理
 - **Vite** — 即时 HMR 开发服务器与优化的生产构建
-- **openapi-fetch** — 基于服务端 OpenAPI 规范自动生成的类型安全 API 客户端
+- **Vitest** — 使用 jsdom 环境的单元测试
 - **Playwright** — 基于浏览器自动化的 E2E 测试
+
+### 路由
+
+| 路径        | 组件     | 需要认证 |
+| ----------- | -------- | -------- |
+| `/`         | Home     | 是       |
+| `/login`    | Login    | 否       |
+| `/register` | Register | 否       |
+| `/users`    | Users    | 是       |
+| `/about`    | About    | 是       |
 
 ### 开发服务器
 
@@ -164,37 +164,35 @@ cd apps/web && bun dev
 
 启动后访问 http://localhost:5173，已启用 HMR。
 
-### E2E 测试
+### 测试
 
 ```bash
 cd apps/web
-bun test:e2e        # 无头模式
-bun test:e2e:ui     # 交互式 UI 模式
+bun test            # 单元测试
+bun test:e2e        # E2E 测试（无头模式）
+bun test:e2e:ui     # E2E 测试（交互式 UI 模式）
 ```
-
----
-
-## 共享包 (`packages/shared`)
-
-以 `@repo/shared` 引入，包含 server 和 web 之间共享的 TypeScript 类型，如 `ApiResponse<T>`。
 
 ---
 
 ## 根目录脚本
 
-| 脚本 | 说明 |
-|------|------|
-| `bun dev` | 启动所有工作区的开发模式 |
-| `bun build` | 构建所有工作区 |
-| `bun test` | 运行全部测试（E2E + 单元测试） |
-| `bun lint:fix` | 自动修复所有工作区的 lint 问题 |
-| `bun codegen:api` | 根据服务端 OpenAPI 规范重新生成前端 API 类型 |
+| 脚本             | 说明                     |
+| ---------------- | ------------------------ |
+| `bun dev`        | 启动所有工作区的开发模式 |
+| `bun dev:web`    | 仅启动前端               |
+| `bun dev:server` | 仅启动后端               |
+| `bun build`      | 构建所有工作区           |
+| `bun lint`       | 运行 ESLint 检查         |
+| `bun lint:fix`   | 自动修复 lint 问题       |
+| `bun format`     | 使用 Prettier 格式化代码 |
+| `bun test`       | 运行所有测试             |
 
 ---
 
 ## Git 提交规范
 
-本项目通过 [commitlint](https://commitlint.js.org/) 校验提交信息格式，并通过 [lint-staged](https://github.com/okonet/lint-staged) 在每次提交前对暂存文件执行 ESLint 检查。
+本项目通过 [commitlint](https://commitlint.js.org/) 校验提交信息格式，并通过 [lint-staged](https://github.com/okonet/lint-staged) 在每次提交前对暂存文件执行 ESLint 和 Prettier 检查。
 
 提交信息须遵循 [Conventional Commits](https://www.conventionalcommits.org/zh-hans/) 规范：
 
@@ -206,68 +204,15 @@ chore: 更新依赖版本
 
 ---
 
-## 部署
+## CI/CD
 
-项目通过 GitHub Actions 部署到自托管的 Linux x64 服务器。工作流手动触发，依次执行 lint 检查、运行测试、构建自包含的服务端二进制和前端静态文件，最后通过 SSH 上传到服务器。
+GitHub Actions 工作流在 push/PR 到 `main` 时运行：
 
-**服务器架构：**
+1. **Lint** — ESLint 检查
+2. **Test** — Vitest 单元测试
 
-- **后端** — 以 systemd 服务（`{project}-server`）运行，监听端口 3000
-- **前端** — 静态文件由 Nginx 提供服务
-- **Nginx** — 将 `/api/` 反向代理到后端，其余路径作为 SPA 静态文件处理
+---
 
-### 第一步 — 首次初始化
+## 许可证
 
-在本地执行一次初始化脚本，它会通过 SSH 自动完成服务器上的用户、目录、systemd 服务和 Nginx 配置：
-
-```bash
-bun run setup
-```
-
-脚本会交互式询问服务器地址、本地 SSH 私钥路径、域名等配置（均有合理默认值）。脚本会自动识别 Linux 发行版，选择正确的 Nginx 配置路径（Debian/Ubuntu 使用 `sites-available`；RHEL/CentOS 使用 `conf.d`）。支持 HTTPS 配置——可选 Let's Encrypt（自动申请免费证书）、手动证书，或仅 HTTP。执行完成后会打印需要在 GitHub 中配置的 Secrets。
-
-**初始化后的目录结构：**
-
-```
-/opt/{project}/
-├── server/
-│   ├── bin/
-│   │   └── server          # 自包含二进制（每次部署替换）
-│   ├── drizzle/            # SQL 迁移文件（每次部署同步）
-│   └── sqlite.db           # 数据库文件（部署时永不覆盖）
-└── web/                    # 前端静态文件
-```
-
-### 第二步 — 配置 GitHub Secrets
-
-在仓库的 **Settings → Secrets and variables → Actions** 中添加以下配置：
-
-| 配置项 | 说明 |
-|--------|------|
-| `SERVER_HOST`（secret） | 服务器 IP 或域名 |
-| `SERVER_USER`（secret） | SSH 登录用户名（如 `deploy`） |
-| `SSH_PRIVATE_KEY`（secret） | SSH 私钥的完整内容 |
-| `PROD_WEB_API_URL`（secret） | 生产环境 API 基础地址。部署时会写入 `apps/web/.env.production` 的 `VITE_API_URL`，并在部署完成后用于健康检查。已配置 HTTPS 则用 `https://`，否则用 `http://`（例如 `https://api.example.com` 或 `http://1.2.3.4`） |
-
-### 第三步 — 触发部署
-
-在 GitHub 仓库页面点击 **Actions → Deploy → Run workflow** 手动触发部署。
-
-流程执行顺序如下：
-
-```
-lint ──┐
-       ├─► build-server ──┐
-test ──┘                   ├─► deploy
-       └─► build-web ──────┘
-```
-
-可在 GitHub 的 **Actions** 标签页中查看实时进度。
-
-### 注意事项
-
-- **数据库安全** — `sqlite.db` 不包含在构建产物中，部署时永远不会被覆盖。每次部署只同步 `drizzle/` 迁移文件。
-- **自动迁移** — 服务端二进制启动时自动执行 `migrate()`。首次部署自动创建数据库并应用全部迁移；后续部署只应用新增迁移。无需手动执行任何迁移命令。
-- **无需服务器上的 Bun** — 服务端二进制自包含，内嵌迁移逻辑，生产服务器上不需要安装 Bun。
-- **停机时间** — 由于 SQLite 单写限制，替换二进制时服务会短暂停止（约 1~3 秒）。
-- **修改 CORS 来源** — 在 `bun run setup` 交互步骤中设置。如需修改，编辑 `/etc/systemd/system/{project}-server.service` 中的 `CORS_ORIGIN` 行，然后执行 `sudo systemctl daemon-reload && sudo systemctl restart {project}-server`。
+[MIT](LICENSE)
