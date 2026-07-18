@@ -22,7 +22,7 @@ jobs:
         run: bun install
 
       - name: Lint
-        run: bun lint
+        run: bun --filter web lint
 
       - name: Test
         run: bun --filter web test
