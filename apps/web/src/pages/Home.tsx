@@ -1,77 +1,29 @@
-import { useEffect, useState } from 'react'
-import { useUsersStore } from '../store'
+import heroImg from '../assets/hero.png'
+import reactLogo from '../assets/react.svg'
+import viteLogo from '../assets/vite.svg'
+import { useCounterStore } from '../store'
 import '../App.css'
-import './Home.css'
-
-const TECH_STACK = ['React 19', 'Elysia', 'Drizzle ORM', 'SQLite', 'Zustand', 'TypeScript']
 
 function Home() {
-  const { users, loading, fetchUsers, addUser } = useUsersStore()
-  const [name, setName] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-
-  useEffect(() => {
-    fetchUsers()
-  }, [fetchUsers])
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!name.trim())
-      return
-    setSubmitting(true)
-    await addUser(name.trim())
-    setName('')
-    setSubmitting(false)
-  }
+  const { count, increment } = useCounterStore()
 
   return (
     <>
       <section id="center">
-        <div id="hero-text">
-          <h1>Fullstack Template</h1>
-          <p id="hero-desc">
-            Production-ready monorepo with typed APIs end-to-end.
+        <div className="hero">
+          <img src={heroImg} className="base" width="170" height="179" alt="" />
+          <img src={reactLogo} className="framework" alt="React logo" />
+          <img src={viteLogo} className="vite" alt="Vite logo" />
+        </div>
+        <div>
+          <h1>Get started</h1>
+          <p>
+            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
           </p>
-          <div id="hero-badges">
-            {TECH_STACK.map(tech => (
-              <span key={tech} className="tech-badge">{tech}</span>
-            ))}
-          </div>
         </div>
-
-        <div id="demo-card">
-          <div id="demo-header">
-            <h2>Users Demo</h2>
-            <code>GET · POST /api/users</code>
-          </div>
-          <form onSubmit={handleSubmit} id="user-form">
-            <input
-              className="text-input"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Enter a name..."
-              disabled={submitting}
-            />
-            <button type="submit" disabled={submitting || !name.trim()} className="btn-primary">
-              {submitting ? 'Adding…' : 'Add User'}
-            </button>
-          </form>
-          <div id="user-list">
-            {loading
-              ? <p className="list-hint">Loading…</p>
-              : users.length === 0
-                ? <p className="list-hint">No users yet. Add one above.</p>
-                : users.map(user => (
-                    <div key={user.id} className="user-item">
-                      <span className="user-name">{user.name}</span>
-                      <span className="user-id">
-                        #
-                        {user.id}
-                      </span>
-                    </div>
-                  ))}
-          </div>
-        </div>
+        <button className="counter" onClick={increment}>
+          Count is {count}
+        </button>
       </section>
 
       <div className="ticks"></div>
@@ -82,21 +34,18 @@ function Home() {
             <use href="/icons.svg#documentation-icon"></use>
           </svg>
           <h2>Documentation</h2>
-          <p>Explore the API and framework docs</p>
+          <p>Your questions, answered</p>
           <ul>
             <li>
-              <a href={`${import.meta.env.VITE_API_URL}/scalar`} target="_blank">
-                API Reference
+              <a href="https://vite.dev/" target="_blank">
+                <img className="logo" src={viteLogo} alt="" />
+                Explore Vite
               </a>
             </li>
             <li>
-              <a href="https://elysiajs.com/" target="_blank">
-                Learn Elysia
-              </a>
-            </li>
-            <li>
-              <a href="https://orm.drizzle.team/" target="_blank">
-                Drizzle ORM
+              <a href="https://react.dev/" target="_blank">
+                <img className="button-icon" src={reactLogo} alt="" />
+                Learn more
               </a>
             </li>
           </ul>
@@ -105,20 +54,47 @@ function Home() {
           <svg className="icon" role="presentation" aria-hidden="true">
             <use href="/icons.svg#social-icon"></use>
           </svg>
-          <h2>Community</h2>
-          <p>Connect with the open-source ecosystem</p>
+          <h2>Connect with us</h2>
+          <p>Join the Vite community</p>
           <ul>
             <li>
-              <a href="https://github.com/hacxy/fullstack-template" target="_blank">
+              <a href="https://github.com/vitejs/vite" target="_blank">
                 <svg className="button-icon" role="presentation" aria-hidden="true">
                   <use href="/icons.svg#github-icon"></use>
                 </svg>
                 GitHub
               </a>
             </li>
+            <li>
+              <a href="https://chat.vite.dev/" target="_blank">
+                <svg className="button-icon" role="presentation" aria-hidden="true">
+                  <use href="/icons.svg#discord-icon"></use>
+                </svg>
+                Discord
+              </a>
+            </li>
+            <li>
+              <a href="https://x.com/vite_js" target="_blank">
+                <svg className="button-icon" role="presentation" aria-hidden="true">
+                  <use href="/icons.svg#x-icon"></use>
+                </svg>
+                X.com
+              </a>
+            </li>
+            <li>
+              <a href="https://bsky.app/profile/vite.dev" target="_blank">
+                <svg className="button-icon" role="presentation" aria-hidden="true">
+                  <use href="/icons.svg#bluesky-icon"></use>
+                </svg>
+                Bluesky
+              </a>
+            </li>
           </ul>
         </div>
       </section>
+
+      <div className="ticks"></div>
+      <section id="spacer"></section>
     </>
   )
 }

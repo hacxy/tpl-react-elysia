@@ -10,7 +10,7 @@ export default defineConfig({
   use: { baseURL: 'http://localhost:5173', trace: 'on-first-retry' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: 'VITE_COVERAGE=true bun dev',
+    command: 'VITE_COVERAGE=true npm run dev',
     url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
   },

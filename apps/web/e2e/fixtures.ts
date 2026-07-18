@@ -5,14 +5,13 @@ import { test as base } from '@playwright/test'
 export const test = base.extend({
   page: async ({ page }, next) => {
     await next(page)
-    const coverage = await page.evaluate(() => window.__coverage__)
+    const coverage = await page.evaluate(
+      () => (window as unknown as { __coverage__?: Record<string, unknown> }).__coverage__,
+    )
     if (coverage) {
       const dir = path.resolve('.nyc_output')
       fs.mkdirSync(dir, { recursive: true })
-      fs.writeFileSync(
-        path.join(dir, `coverage-${Date.now()}.json`),
-        JSON.stringify(coverage),
-      )
+      fs.writeFileSync(path.join(dir, `coverage-${Date.now()}.json`), JSON.stringify(coverage))
     }
   },
 })

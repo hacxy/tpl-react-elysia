@@ -1,20 +1,26 @@
-import antfu from '@antfu/eslint-config'
+import js from '@eslint/js'
+import react from '@eslint-react/eslint-plugin'
+import prettier from 'eslint-config-prettier'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import tseslint from 'typescript-eslint'
 
-export default antfu({ react: true, css: true, html: true, markdown: true }, {
-  rules: {
-    'unicorn/filename-case': ['error', {
-      cases: { pascalCase: true, camelCase: true },
-      ignore: [/^README/],
-    }],
+export default tseslint.config(
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  react.configs['recommended-typescript'],
+  {
+    plugins: {
+      'react-hooks': reactHooks,
+      'react-refresh': reactRefresh,
+    },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+    },
   },
-}, {
-  files: ['src/assets/**'],
-  rules: {
-    'unicorn/filename-case': ['error', { cases: { kebabCase: true } }],
+  prettier,
+  {
+    ignores: ['dist/', 'node_modules/', 'coverage/', '.nyc_output/', 'playwright-report/'],
   },
-}, {
-  files: ['e2e/**'],
-  rules: {
-    'unicorn/filename-case': ['error', { cases: { kebabCase: true } }],
-  },
-})
+)
